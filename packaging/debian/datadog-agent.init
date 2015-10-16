@@ -153,7 +153,7 @@ case "$1" in
         ;;
 
     reload)
-        kill -12 `cat $COLLECTOR_PIDFILE`
+        kill -SIGUSR2 `cat $COLLECTOR_PIDFILE`
         exit $?
         ;;
 
@@ -186,7 +186,7 @@ case "$1" in
 
     *)
         N=/etc/init.d/$NAME
-        echo "Usage: $N {start|stop|restart|info|status|configcheck|configtest|jmx|flare}"
+        echo "Usage: $N {start|stop|restart|info|status|reload|configcheck|configtest|jmx|flare}"
         exit 1
         ;;
 esac
