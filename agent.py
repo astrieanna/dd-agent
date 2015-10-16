@@ -95,46 +95,19 @@ class Agent(Daemon):
 
     def reload_configs(self):
         """Reloads the agent configuration and checksd configurations."""
-
-        # Reload datadog config, find hostname and grab emitters
-        config = get_config(parse_args=True)
-        self._agentConfig = self._set_agent_config_hostname(config)
-        log.info("AGENT.PY SIGUSR2: self._agentConfig has {0} items".format(len(self._agentConfig.keys())))
-        log.info("AGENT.PY: self._agentConfig: " + str(self._agentConfig))
-        if self._agentConfig.get('log_level'):
-            log.info("AGENT.PY SIGUSR2: log_level is SET")
-        else:
-            log.info("AGENT.PY SIGUSR2: Did not find any config called log_level")
-
-        # Gather Agent Info
-        systemStats = get_system_stats()  # Don't forget to add system_stats
-        self._agentConfig['system_stats'] = systemStats
-        hostname = get_hostname(self._agentConfig)
-        emitters = self._get_emitters()
-
         # Reload checksd configs
+        hostname = get_hostname(self._agentConfig)
         self._checksd = load_check_directory(self._agentConfig, hostname)
 
         # Logging
         num_checks = len(self._checksd['initialized_checks'])
         if num_checks > 0:
-            log.info("AGENT.PY SIGUSR2: Successfully reloaded {num_checks}".
+            log.info("SIGUSR2: Successfully reloaded {num_checks} checks".
                      format(num_checks=num_checks))
             for che in self._checksd['initialized_checks']:
-                log.info("AGENT.PY SIGUSR2: \t{0}".format(che))
+                log.info("SIGUSR2: \t{0}".format(che))
         else:
-            log.info("AGENT.PY SIGUSR2: No checkd configs found")
-
-        # Restart the Collector to pick up Datadog config changes
-        self.collector.stop()
-        self.collector = Collector(self._agentConfig, emitters, systemStats, hostname)
-
-        # In developer mode, the number of runs to be included in a single collector profile
-        self.collector_profile_interval = self._agentConfig.get('collector_profile_interval',
-                                                                DEFAULT_COLLECTOR_PROFILE_INTERVAL)
-
-        # Configure the watchdog.
-        self.check_frequency = int(self._agentConfig['check_freq'])
+            log.info("SIGUSR2: No checkd configs found")
 
     @classmethod
     def info(cls, verbose=None):
@@ -189,16 +162,10 @@ class Agent(Daemon):
 
         # Run the main loop.
         while self.run_forever:
-            log.info("AGENT.PY: self._agentConfig has {0} items".format(len(self._agentConfig.keys())))
-            log.info("AGENT.PY: self._agentConfig: " + str(self._agentConfig))
-            if self._agentConfig.get('log_level'):
-                log.info("AGENT.PY: log_level is SET")
-            else:
-                log.info("AGENT.PY: Did not find any config called log_level")
-            log.info("AGENT.PY: self.collector: " + str(self.collector))
-            log.info("AGENT.PY: {0} checks".format(len(self._checksd['initialized_checks'])))
+            log.info("Found {0} initialized checks".format(len(self._checksd['initialized_checks'])))
             for che in self._checksd['initialized_checks']:
                 log.info("\t{0}".format(che))
+
             # Setup profiling if necessary
             if self.in_developer_mode and not profiled:
                 try:
@@ -209,9 +176,9 @@ class Agent(Daemon):
                     log.warn("Cannot enable profiler: %s" % str(e))
 
             # Do the work.
-            log.info("AGENT.PY: Starting Collector...")
+            log.info("Starting Collector...")
             self.collector.run(checksd=self._checksd, start_event=self.start_event)
-            log.info("AGENT.PY: Collector DONE!")
+            log.info("Collector DONE!")
             if profiled:
                 if collector_profiled_runs >= self.collector_profile_interval:
                     try:
@@ -231,7 +198,7 @@ class Agent(Daemon):
                     watchdog.reset()
                 if profiled:
                     collector_profiled_runs += 1
-                log.info("AGENT.PY: Sleeping for {0} seconds".format(self.check_frequency))
+                log.info("Sleeping for {0} seconds".format(self.check_frequency))
                 time.sleep(self.check_frequency)
 
         # Now clean-up.

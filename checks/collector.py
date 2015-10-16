@@ -150,7 +150,6 @@ class Collector(object):
     passing it along to the emitters, who send it to their final destination.
     """
     def __init__(self, agentConfig, emitters, systemStats, hostname):
-        log.info("COLLECTOR.PY: Initializing!")
         self.emit_duration = None
         self.agentConfig = agentConfig
         self.hostname = hostname
@@ -251,11 +250,11 @@ class Collector(object):
 
     @log_exceptions(log)
     def run(self, checksd=None, start_event=True):
-        log.info("COLLECTOR.PY: Start of run()")
-        log.info("COLLECTOR.PY: {0} checks".format(len(checksd['initialized_checks'])))
         """
         Collect data from each check and submit their data.
         """
+        log.info("Start of Collector.run()")
+        log.info("Collector found {0} initialized checks".format(len(checksd['initialized_checks'])))
         timer = Timer()
         if not Platform.is_windows():
             cpu_clock = time.clock()
