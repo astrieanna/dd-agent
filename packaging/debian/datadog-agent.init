@@ -25,6 +25,7 @@ SUPERVISOR_FILE="/etc/dd-agent/supervisor.conf"
 SUPERVISOR_SOCK="/opt/datadog-agent/run/datadog-supervisor.sock"
 SUPERVISORCTL_PATH="/opt/datadog-agent/bin/supervisorctl"
 SUPERVISORD_PATH="/opt/datadog-agent/bin/supervisord"
+COLLECTOR_PIDFILE="/opt/datadog-agent/run/dd-agent.pid"
 SYSTEM_PATH=/opt/datadog-agent/embedded/bin:/opt/datadog-agent/bin:$PATH
 
 if [ ! -x $AGENTPATH ]; then
@@ -148,6 +149,11 @@ case "$1" in
         else
             check_status
         fi
+        exit $?
+        ;;
+
+    reload)
+        kill -12 `cat $COLLECTOR_PIDFILE`
         exit $?
         ;;
 
