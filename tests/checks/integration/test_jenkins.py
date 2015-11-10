@@ -4,17 +4,13 @@ from checks import AgentCheck
 from tests.checks.common import AgentCheckTest
 
 # TODO: convert to test Jenkins
-@attr(requires='lighttpd')
-class TestLighttpd(AgentCheckTest):
-    CHECK_NAME = 'lighttpd'
+@attr(requires='jenkins')
+class TestJenkins(AgentCheckTest):
+    CHECK_NAME = 'jenkins'
     CHECK_GAUGES = [
-        'lighttpd.net.bytes',
-        'lighttpd.net.bytes_per_s',
-        'lighttpd.net.hits',
-        'lighttpd.net.request_per_s',
-        'lighttpd.performance.busy_servers',
-        'lighttpd.performance.idle_server',
-        'lighttpd.performance.uptime',
+        'jenkins.job.success',
+        'jenkins.job.failure',
+        'jenkins.job.duration',
     ]
 
     def __init__(self, *args, **kwargs):
@@ -22,29 +18,15 @@ class TestLighttpd(AgentCheckTest):
         self.config = {
             'instances': [
                 {
-                    'lighttpd_status_url': 'http://localhost:9449/server-status',
-                    'tags': ['instance:first'],
+		    'jenkins_home': '/pay/jenkins0/',
+		    'name': 'jenkins1'
                 }
             ]
         }
 
-    def test_lighttpd(self):
-        self.run_check_twice(self.config)
-        self.assertServiceCheck(self.check.SERVICE_CHECK_NAME,
-                                status=AgentCheck.OK,
-                                tags=['host:localhost', 'port:9449'])
-
-        for gauge in self.CHECK_GAUGES:
-            self.assertMetric(gauge, tags=['instance:first'], count=1)
+    def test_jenkins(self):
+        self.run_check(self.config)
+	self.config['instances']['jenkins_home'] = '/pay/jenkins1/'
+	self.check(self.config)
         self.coverage_report()
 
-    def test_bad_config(self):
-        self.assertRaises(
-            Exception,
-            lambda: self.run_check({"instances": [{'lighttpd_status_url': 'http://localhost:1337',
-                                                   'tags': ['instance: first']}]})
-        )
-        self.assertServiceCheck(self.check.SERVICE_CHECK_NAME,
-                                status=AgentCheck.CRITICAL,
-                                tags=['host:localhost', 'port:1337'],
-                                count=1)
